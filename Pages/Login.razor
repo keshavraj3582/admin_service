@@ -1,0 +1,57 @@
+﻿@page "/login"
+@using Admin_service.Models
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+<h3>Login</h3>
+
+<EditForm Model="@admin" OnValidSubmit="HandleSubmit">
+    <div class="form-group">
+        <label for="Email">Email:</label>
+        <InputText @bind-Value="@admin.Email" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="Password">Password:</label>
+        <InputText @bind-Value="@admin.Password" class="form-control" type="Password" />
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+</EditForm>
+
+@code {
+    private Admin admin = new Admin();
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            var response = await HttpClient.PostAsJsonAsync("https://localhost:7128/GetRole", admin);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var role = await response.Content.ReadAsStringAsync();
+
+                switch (role)
+                {
+                    case "Approver":
+                        NavigationManager.NavigateTo("/approver");
+                        break;
+                    case "Verifier":
+                        NavigationManager.NavigateTo("/verifier");
+                        break;
+                    default:
+                        Console.WriteLine("Unknown role");
+                        break;
+                }
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                // Handle error message
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle exception
+            Console.WriteLine("An error occurred: " + ex.Message);
+        }
+    }
+}
