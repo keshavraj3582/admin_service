@@ -1,0 +1,119 @@
+﻿@page "/verifier"
+@using Admin_service.Models
+@inject HttpClient HttpClient
+<h3>FetchingUnverifiedSchools</h3>
+
+@* <button class="btn btn-primary" @onclick="ShowUnverifiedSchools">Show Unverified Schools</button>
+*@
+@if (institutes != null)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>SchoolId</th>
+                <th>InstitutionName</th>
+                <th>Address</th>
+                <th>Country</th>
+                <th>State</th>
+                <th>City</th>
+                <th>Contact</th>
+                <th>ZipCodes</th>
+                <th>Url</th>
+                <th>AvailableExams</th>
+                <th>SelectedExams</th>
+                <th>AvailableFacility</th>
+                <th>SelectedFacility</th>
+                <th>SchoolCode</th>
+                <th>VerificationStatus</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var school in institutes)
+            {
+                <tr>
+                    <td>@school.SchoolId</td>
+                    <td>@school.InstitutionName</td>
+                    <td>@school.Address</td>
+                    <td>@school.Country</td>
+                    <td>@school.State</td>
+                    <td>@school.City</td>
+                    <td>@school.Contact</td>
+                    <td>@school.ZipCodes</td>
+                    <td>@school.Url</td>
+                    <td>@school.AvailableExams</td>
+                    <td>@school.SelectedExams</td>
+                    <td>@school.AvailableFacility</td>
+                    <td>@school.SelectedFacility</td>
+                    <td>@school.SchoolCode</td>
+                    <td>@school.VerificationStatus</td>
+                    <td>
+                        <EditForm Model="@school">
+
+
+                            <div class="form-group">
+                                <label for="SchoolCode">SchoolCode</label>
+                                <InputText @bind-Value="@school.SchoolCode" class="form-control" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="VerificationStatus">VerificationStatus</label>
+                                <InputCheckbox @bind-Value="@school.VerificationStatus" />
+                            </div>
+
+                            <button type="button" class="btn btn-success" @onclick="()=>VerifySchool(school)">Verify</button>
+
+
+                        </EditForm>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No unverified schools found.</p>
+}
+
+@code {
+    private List<Institute> institutes;
+    public Institute school { get; set; } = new Institute();
+
+    protected override async Task OnInitializedAsync()
+    {
+        institutes = await ShowUnverifiedSchools();
+    }
+
+    private async Task<List<Institute>> ShowUnverifiedSchools()
+    {
+
+
+        try
+        {
+            var response = await HttpClient.GetFromJsonAsync<List<Institute>>("https://localhost:7128/api/getAllSchool/GetAllSchools");
+            return response;
+        }
+        catch (Exception ex)
+        {
+
+            return null;
+        }
+    }
+    private async Task VerifySchool(Institute school)
+    {
+
+        Console.WriteLine("hello");
+        var response = await HttpClient.PutAsJsonAsync("https://localhost:7128/api/getAllSchool/UpdateSchoolVerify", school);
+
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Schools Verified");
+        }
+        else
+        {
+            Console.WriteLine("Schools Not Verified");
+
+        }
+    }
+}

@@ -1,0 +1,136 @@
+﻿@page "/approver"
+@using System.Text.Json;
+@using Admin_service.Models
+@inject HttpClient HttpClient
+<h3>Approving Verified Schools</h3>
+
+@if (instituteDataList != null)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>InstitutionName</th>
+                <th>Address</th>
+                <th>Country</th>
+                <th>State</th>
+                <th>City</th>
+                <th>Contact</th>
+                <th>ZipCodes</th>
+                <th>Url</th>
+                <th>AvailableExams</th>
+                <th>SelectedExams</th>
+                <th>AvailableFacility</th>
+                <th>SelectedFacility</th>
+                <th>SchoolCode</th>
+                <th>VerificationStatus</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var school in instituteDataList)
+            {
+                <tr>
+                    <td>@school.InstitutionName</td>
+                    <td>@school.Address</td>
+                    <td>@school.Country</td>
+                    <td>@school.State</td>
+                    <td>@school.City</td>
+                    <td>@school.Contact</td>
+                    <td>@school.ZipCodes</td>
+                    <td><a href="@school.Url" target="_blank">@school.Url</a></td>
+                    <td>@school.AvailableExams</td>
+                    <td>@school.SelectedExams</td>
+                    <td>@school.AvailableFacility</td>
+                    <td>@school.SelectedFacility</td>
+                    <td>@school.SchoolCode</td>
+                    <td>@school.VerificationStatus</td>
+                    <td>
+                        <button class="btn btn-success" @onclick="() => ApproveSchool(school)">Approve</button>
+                    </td>
+                </tr>
+                <tr>
+                    <EditForm Model="@school" OnValidSubmit="() => ApproveSchool(school)">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="form-group">
+                            <label for="SchoolCode">SchoolCode</label>
+                            <InputText @bind-Value="@school.SchoolCode" class="form-control" />
+                        </div>
+                    </EditForm>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No verified schools found.</p>
+}
+
+@if (selectedModulesAmount != null)
+{
+    <p>Selected Modules Amount: @selectedModulesAmount</p>
+}
+@code {
+
+    private List<InstituteApproval> instituteDataList;
+    private decimal? selectedModulesAmount;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        instituteDataList = await ShowVerifiedSchools();
+    }
+
+
+    private async Task<List<InstituteApproval>> ShowVerifiedSchools()
+    {
+        try
+        {
+            var response = await HttpClient.GetFromJsonAsync<List<InstituteApproval>>("https://localhost:7128/api/Modules/GetVerifiedList");
+            return response;
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+
+
+    private async Task ApproveSchool(InstituteApproval school)
+    {
+        ReadAmount moduleAmount;
+
+        try
+        {
+            var response = await HttpClient.GetAsync($"https://localhost:7128/api/Modules?schoolCode={school.SchoolCode}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+
+                if (jsonResponse != null)
+                {
+                    selectedModulesAmount = decimal.Parse(jsonResponse);
+
+                    Console.WriteLine($"School approved. Selected Modules Amount: {selectedModulesAmount:C}");
+                    // You can now use 'selectedModulesAmount' in your Blazor UI as needed.
+                }
+                else
+                {
+                    Console.WriteLine("Failed to deserialize JSON response");
+                }
+            }
+
+
+        }
+        catch (Exception ex)
+        {
+            //exception
+        }
+    }
+}
+
+
+
